@@ -9,7 +9,8 @@ import albumRoute from "./Routes/albumRoute.js";
 import songRoute from "./Routes/songRoute.js";
 import playlistRoute from "./Routes/playlistRoute.js";
 import likeRoute from "./Routes/likeRouter.js";
-import commentRoute from "./Routes/commentRoute.js"
+import commentRoute from "./Routes/commentRoute.js";
+import adminRoute from "./Routes/adminRoute.js";
 
 dotenv.config();
 
@@ -32,7 +33,8 @@ app.use("/api/albums", albumRoute);
 app.use("/api/songs", songRoute);
 app.use("/api/playlist", playlistRoute);
 app.use("/api/like", likeRoute);
-app.use("/api/comment",commentRoute)
+app.use("/api/comment", commentRoute);
+app.use("/api/admin", adminRoute);
 
 const port = process.env.PORT || 4000;
 
