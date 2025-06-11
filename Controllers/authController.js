@@ -116,7 +116,6 @@ Your Application Team
   }
 };
 
-
 export const resetPassword = async (req, res) => {
   try {
     const { id, token } = req.params;
@@ -130,7 +129,7 @@ export const resetPassword = async (req, res) => {
     }
 
     // Find user with matching id and resetToken
-    const user = await User.findOne({ _id: id, resetToken: token });
+    const user = await User.findById(id);
     if (!user) {
       return res.status(401).json({ message: "Invalid or expired token" });
     }
