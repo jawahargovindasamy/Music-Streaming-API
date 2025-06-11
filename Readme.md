@@ -23,7 +23,7 @@ A Node.js RESTful API for a music streaming service, supporting user authenticat
 
 1. **Clone the repository**
    ```sh
-   git clone <your-repo-url>
+   git clone https://github.com/jawahargovindasamy/Music-Streaming-API
    cd Server
    ```
 
