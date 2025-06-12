@@ -1,7 +1,7 @@
 import Artist from "../Models/artistModel.js";
 import Album from "../Models/albumModel.js";
 import User from "../Models/userModel.js";
-import { populate } from "dotenv";
+import Song from "../Models/songModel.js";
 
 export const createAlbum = async (req, res) => {
   try {
@@ -69,22 +69,38 @@ export const getAlbums = async (req, res) => {
       return res.status(404).json({ message: "No albums found" });
     }
 
-    const formattedAlbums = albums.map((album) => {
-      const artist = album.artistId;
+    // Fetch songs for each album
+    const formattedAlbums = await Promise.all(
+      albums.map(async (album) => {
+        const artist = album.artistId;
 
-      return {
-        albumId: album._id,
-        title: album.title,
-        coverImage: album.coverImage,
-        artistId: artist._id,
-        artistName: artist.userID.username || "Unknown",
-        releaseDate: album.releaseDate,
-      };
+        // Fetch songs related to this album
+        const songs = await Song.find({ albumId: album._id });
+
+        return {
+          albumId: album._id,
+          title: album.title,
+          coverImage: album.coverImage,
+          artistId: artist._id,
+          artistName: artist.userID.username || "Unknown",
+          releaseDate: album.releaseDate,
+          songs: songs.map((song) => ({
+            songId: song._id,
+            title: song.title,
+            duration: song.duration,
+            fileUrl: song.fileUrl,
+            genre: song.genre,
+            playCount: song.playCount,
+            downloadCount: song.downloadCount,
+          })),
+        };
+      })
+    );
+
+    res.status(200).json({
+      message: "Albums fetched successfully",
+      data: formattedAlbums,
     });
-
-    res
-      .status(200)
-      .json({ message: "Albums fetched successfully", data: formattedAlbums });
   } catch (error) {
     res.status(500).json({
       message: "Internal Server Error while getting albums",
@@ -92,6 +108,7 @@ export const getAlbums = async (req, res) => {
     });
   }
 };
+
 
 export const getAlbumById = async (req, res) => {
   try {
@@ -104,29 +121,37 @@ export const getAlbumById = async (req, res) => {
         select: "username",
       },
     });
-    if (!album || album.length === 0) {
+
+    if (!album) {
       return res.status(404).json({ message: "Album not found" });
     }
 
-    const artist = album.artistId;
+    const songs = await Song.find({ albumId: album._id });
 
     const formattedAlbum = {
       albumId: album._id,
       title: album.title,
       coverImage: album.coverImage,
-      artistId: artist._id,
-      artistName: artist.userID?.username || "Unknown",
-      bio: artist.bio,
-      profilePic: artist.profilePic || "",
+      artistId: album.artistId._id,
+      artistName: album.artistId.userID.username || "Unknown",
       releaseDate: album.releaseDate,
+      songs: songs.map((song) => ({
+        songId: song._id,
+        title: song.title,
+        duration: song.duration,
+        fileUrl: song.fileUrl,
+        genre: song.genre,
+        playCount: song.playCount,
+        downloadCount: song.downloadCount,
+      })),
     };
 
     res
       .status(200)
-      .json({ message: "Albums fetched successfully", data: formattedAlbum });
+      .json({ message: "Album fetched successfully", data: formattedAlbum });
   } catch (error) {
     res.status(500).json({
-      message: "Internal Server Error while getting album by ID",
+      message: "Internal Server Error while fetching album",
       error: error.message,
     });
   }
