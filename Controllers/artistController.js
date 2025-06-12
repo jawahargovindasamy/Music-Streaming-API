@@ -333,3 +333,42 @@ export const getTopArtistsByFollowers = async (req, res) => {
     });
   }
 };
+
+
+export const deleteArtist = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Step 1: Find the artist
+    const artist = await Artist.findById(id);
+    if (!artist) {
+      return res.status(404).json({ message: "Artist not found" });
+    }
+
+    const userId = artist.userID;
+
+    // Step 2: Find all albums by this artist
+    const albums = await Album.find({ artistId: id });
+    const albumIds = albums.map((album) => album._id);
+
+    // Step 3: Delete all songs by this artist or in the artist's albums
+    await Song.deleteMany({
+      $or: [{ artistId: id }, { albumId: { $in: albumIds } }],
+    });
+
+    // Step 4: Delete all albums by this artist
+    await Album.deleteMany({ artistId: id });
+
+    // Step 5: Delete the artist
+    await Artist.findByIdAndDelete(id);
+
+    // Step 6: Delete the linked user
+    await User.findByIdAndDelete(userId);
+
+    return res.status(200).json({ message: "Artist and related data deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting artist:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+

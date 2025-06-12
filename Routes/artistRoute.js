@@ -3,6 +3,7 @@ import {
   artistFollow,
   artistUnfollow,
   createArtist,
+  deleteArtist,
   getAllArtists,
   getAllFollowers,
   getArtistById,
@@ -40,6 +41,12 @@ router.get(
   validateObjectId("id"),
   authMiddleware,
   getAllFollowers
+);
+router.delete(
+  "/:id",
+  validateObjectId("id"),
+  adminMiddleware,
+  deleteArtist
 );
 
 export default router;

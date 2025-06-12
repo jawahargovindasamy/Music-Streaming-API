@@ -109,7 +109,6 @@ export const getAlbums = async (req, res) => {
   }
 };
 
-
 export const getAlbumById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -219,30 +218,26 @@ export const updateAlbum = async (req, res) => {
 };
 
 export const deleteAlbum = async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const { id } = req.params;
-
-    if (req.user.role !== "admin") {
-      return res
-        .status(403)
-        .json({ message: "Access Denied: Only admin can delete album" });
-    }
-
-    const album = await Album.findByIdAndDelete(id);
-
+    // Step 1: Find the album
+    const album = await Album.findById(id);
     if (!album) {
       return res.status(404).json({ message: "Album not found" });
     }
 
-    const albums = await Album.find();
+    // Step 2: Delete all songs related to this album
+    await Song.deleteMany({ albumId: id });
 
-    res
+    // Step 3: Delete the album
+    await Album.findByIdAndDelete(id);
+
+    return res
       .status(200)
-      .json({ message: "Album deleted successfully", data: albums });
+      .json({ message: "Album and its songs deleted successfully" });
   } catch (error) {
-    res.status(500).json({
-      message: "Internal Server Error while deleting album",
-      error: error.message,
-    });
+    console.error("Error deleting album:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
