@@ -23,6 +23,15 @@ const userSchema = mongoose.Schema({
     default: "user",
     enum: ["user", "admin", "artist"],
   },
+  dob:{
+    type: Date,
+  },
+  phone:{
+    type: String
+  },
+  location:{
+    type: String
+  },
   createdAt: {
     type: Date,
     default: Date.now,
