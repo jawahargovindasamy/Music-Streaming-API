@@ -41,21 +41,18 @@ export const updateUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
     if (req.user.role !== "admin" && req.user.id.toString() !== req.params.id) {
       return res.status(403).json({
-        message:
-          "Access Denied: Only admin or the account owner can update this user",
+        message: "Access Denied: Only admin or the account owner can update this user",
       });
     }
-    if (req.file && req.file.path) {
-      req.body.profilePic = req.file.path;
-    }
+
     const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
-    res
-      .status(200)
-      .json({ message: "User updated successfully", data: updatedUser });
+
+    res.status(200).json({ message: "User updated successfully", data: updatedUser });
   } catch (error) {
     res.status(500).json({
       message: "Internal Server Error while updating user",
@@ -63,6 +60,7 @@ export const updateUser = async (req, res) => {
     });
   }
 };
+
 
 export const deleteUser = async (req, res) => {
   try {
