@@ -1,4 +1,5 @@
 import User from "../Models/userModel.js";
+import Artist from "../Models/artistModel.js";
 
 export const getAllUsers = async (req, res) => {
   try {
@@ -37,22 +38,46 @@ export const getUserById = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const userId = req.params.id;
+    const updatePayload = req.body;
+
+    // Fetch existing user
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (req.user.role !== "admin" && req.user.id.toString() !== req.params.id) {
+    // Allow only admin or the account owner
+    if (req.user.role !== "admin" && req.user.id.toString() !== userId) {
       return res.status(403).json({
         message: "Access Denied: Only admin or the account owner can update this user",
       });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
+    const isRoleBeingUpdatedToArtist =
+      req.user.role === "admin" && updatePayload.role === "artist" && user.role !== "artist";
+
+    // Update the user
+    const updatedUser = await User.findByIdAndUpdate(userId, updatePayload, {
       new: true,
     });
 
-    res.status(200).json({ message: "User updated successfully", data: updatedUser });
+    // If role changed to artist and not already an artist, create Artist record
+    if (isRoleBeingUpdatedToArtist) {
+      const existingArtist = await Artist.findOne({ userID: userId });
+      if (!existingArtist) {
+        await Artist.create({
+          userID: userId,
+          bio: "This artist hasn't added a bio yet.", // default bio
+          image: updatedUser.profilePic,
+        });
+      }
+    }
+
+    res.status(200).json({
+      message: "User updated successfully",
+      data: updatedUser,
+    });
   } catch (error) {
     res.status(500).json({
       message: "Internal Server Error while updating user",
@@ -60,6 +85,7 @@ export const updateUser = async (req, res) => {
     });
   }
 };
+
 
 
 export const deleteUser = async (req, res) => {
