@@ -1,4 +1,5 @@
 import User from "../Models/userModel.js";
+import Artist from "../Models/artistModel.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
@@ -55,11 +56,20 @@ export const loginUser = async (req, res) => {
       }
     );
 
+    let artistId = null;
+    if (user.role === "artist") {
+      const artist = await Artist.findOne({ userID: user._id });
+      if (artist) {
+        artistId = artist._id;
+      }
+    }
+
     res.status(200).json({
       message: "User logged in successfully",
       token: token,
       role: user.role,
       userId: user._id,
+      artistId: artistId,
       username: user.username,
       profilePic: user.profilePic,
       email: user.email,
