@@ -91,10 +91,8 @@ export const getAllArtists = async (req, res) => {
 
 export const getArtistById = async (req, res) => {
   try {
-    const artist = await Artist.findById(req.params.id).populate(
-      "userID",
-      "username role"
-    );
+    const artist = await Artist.findById(req.params.id).populate("userID", "username role");
+
     if (!artist) {
       return res.status(404).json({ message: "Artist not found" });
     }
@@ -104,33 +102,59 @@ export const getArtistById = async (req, res) => {
     }
 
     const albums = await Album.find({ artistId: artist._id });
+    const songs = await Song.find({ artistId: artist._id }).sort({ playCount: -1 });
 
-    const songs = await Song.find({ artistId: artist._id }).sort({playCount: -1});
+    // Total play count = fake monthly listeners
+    const monthlyListeners = songs.reduce((acc, song) => acc + song.playCount, 0);
+    const followers = artist.followersCount || artist.followers?.length || 0;
+
+    // MOCK last month data (you should store this in DB later)
+    const followersLastMonth = Math.max(0, Math.floor(followers * 0.88)); // assume 12% growth
+    const monthlyListenersLastMonth = Math.max(0, Math.floor(monthlyListeners * 0.92)); // assume 8% growth
+
+    const calculateChange = (current, previous) => {
+      if (previous === 0) return 100;
+      return ((current - previous) / previous) * 100;
+    };
 
     const formattedArtist = {
       artistId: artist._id,
       username: artist.userID.username,
       bio: artist.bio,
-      profilePic: artist.profilePic,
+      profilePic: artist.image,
+      followers,
+      followersLastMonth,
+      followersChange: calculateChange(followers, followersLastMonth), // % change
+
+      monthlyListeners,
+      monthlyListenersLastMonth,
+      monthlyListenersChange: calculateChange(monthlyListeners, monthlyListenersLastMonth), // % change
+
+      totalAlbums: albums.length,
+      totalSongs: songs.length,
+
       albums: albums.map((album) => ({
         albumId: album._id,
         title: album.title,
         coverImage: album.coverImage,
         releaseDate: album.releaseDate,
       })),
+
       songs: songs.map((song) => ({
         songId: song._id,
         title: song.title,
-        audioUrl: song.audioUrl,
+        audioUrl: song.fileUrl,
         albumId: song.albumId,
         duration: song.duration,
-        playCount: song.playCount
+        playCount: song.playCount,
       })),
     };
 
-    res
-      .status(200)
-      .json({ message: "Artist fetched successfully", data: formattedArtist });
+    res.status(200).json({
+      message: "Artist fetched successfully",
+      data: formattedArtist,
+    });
+
   } catch (error) {
     res.status(500).json({
       message: "Internal Server Error while getting artist by ID",
@@ -138,6 +162,8 @@ export const getArtistById = async (req, res) => {
     });
   }
 };
+
+
 
 export const updateArtist = async (req, res) => {
   try {
