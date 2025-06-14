@@ -6,6 +6,7 @@ import {
   deleteAlbum,
   getAlbumById,
   getAlbums,
+  getAlbumsByArtistId,
   updateAlbum,
 } from "../Controllers/albumController.js";
 import validateObjectId from "../Middleware/validateObjectId.js";
@@ -16,6 +17,7 @@ const router = express.Router();
 router.post("/", artistMiddleware, uploadAlbumPic, createAlbum);
 router.get("/", getAlbums);
 router.get("/:id", validateObjectId("id"), getAlbumById);
+router.get("/artist/:id", validateObjectId("id"), getAlbumsByArtistId);
 router.put(
   "/:id",
   validateObjectId("id"),

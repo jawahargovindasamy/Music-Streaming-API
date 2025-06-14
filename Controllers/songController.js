@@ -150,10 +150,42 @@ export const getAllSongs = async (req, res) => {
   }
 };
 
+
+export const getSongbyId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const song = await Song.findById(id).populate("albumId", "title");
+    if (!song) {
+      return res.status(404).json({ message: "Song not found" });
+    }
+
+    const formatSong = {
+      songId: song._id,
+      title: song.title,
+      artistId: song.artistId,
+      album: song.albumId.title,
+      genre: song.genre,
+      duration: song.duration,
+      fileUrl: song.fileUrl,
+      playCount: song.playCount,
+      downloadCount: song.downloadCount,
+      createdAt: song.createdAt,
+      updatedAt: song.updatedAt,
+    };
+
+    res.status(200).json({ message: "Song fetched successfully", data: formatSong });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching song",
+      error: error.message,
+    });
+  }
+};
+
 export const updateSong = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, genre, duration } = req.body;
+    const { title, genre, duration, albumId } = req.body;
     const userId = req.user.id;
 
     const song = await Song.findById(id);
@@ -181,6 +213,15 @@ export const updateSong = async (req, res) => {
       });
     }
 
+    // ✅ Update albumId if provided
+    if (albumId) {
+      const albumExists = await Album.findById(albumId);
+      if (!albumExists) {
+        return res.status(404).json({ message: "Album not found" });
+      }
+      song.albumId = albumId;
+    }
+
     if (title) song.title = title;
     if (genre) song.genre = genre;
     if (duration) {
@@ -197,7 +238,6 @@ export const updateSong = async (req, res) => {
     }
 
     song.updatedAt = Date.now();
-
     await song.save();
 
     res.status(200).json({
@@ -211,6 +251,7 @@ export const updateSong = async (req, res) => {
     });
   }
 };
+
 
 export const deleteSong = async (req, res) => {
   try {

@@ -5,6 +5,7 @@ import {
   deleteSong,
   downloadSong,
   getAllSongs,
+  getSongbyId,
   incrementPlayCount,
   updateSong,
 } from "../Controllers/songController.js";
@@ -17,6 +18,7 @@ const router = express.Router();
 
 router.post("/", artistMiddleware, uploadSongs, createSong);
 router.get("/", getAllSongs);
+router.get("/:id",validateObjectId("id"), artistMiddleware,getSongbyId);
 router.put(
   "/:id",
   validateObjectId("id"),

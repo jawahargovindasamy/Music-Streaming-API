@@ -156,6 +156,60 @@ export const getAlbumById = async (req, res) => {
   }
 };
 
+export const getAlbumsByArtistId = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find albums by artistId with artist username populated
+    const albums = await Album.find({ artistId: id }).populate({
+      path: "artistId",
+      populate: {
+        path: "userID",
+        select: "username",
+      },
+    });
+
+    // For each album, fetch its songs and build the desired structure
+    const formattedAlbums = await Promise.all(
+      albums.map(async (album) => {
+        const songs = await Song.find({ albumId: album._id });
+
+        return {
+          albumId: album._id,
+          title: album.title,
+          coverImage: album.coverImage,
+          artistId: album.artistId._id,
+          artistName: album.artistId.userID.username,
+          releaseDate: album.releaseDate,
+          songs: songs.map((song) => ({
+            songId: song._id,
+            title: song.title,
+            duration: song.duration,
+            fileUrl: song.fileUrl,
+            genre: song.genre,
+            playCount: song.playCount,
+            downloadCount: song.downloadCount,
+          })),
+        };
+      })
+    );
+
+    res.status(200).json({
+      message: "Albums fetched successfully",
+      count: formattedAlbums.length,
+      data: formattedAlbums,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: "Internal Server Error while fetching albums",
+      error: error.message,
+    });
+  }
+};
+
+
+
 export const updateAlbum = async (req, res) => {
   try {
     const { id } = req.params;

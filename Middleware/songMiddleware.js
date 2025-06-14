@@ -5,9 +5,9 @@ import cloudinary from "../Database/cloudinaryConfig.js";
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: "Audio Streaming/Audio", // Your Cloudinary folder path
+    folder: "Audio Streaming/Audio",
     allowed_formats: ["mp3", "wav", "aac", "flac", "m4a", "ogg"],
-    resource_type: "video",
+    resource_type: "video", // Needed for audio uploads
   },
 });
 
@@ -17,7 +17,6 @@ const upload = multer({
     fileSize: 50 * 1024 * 1024, // 50MB limit
   },
   fileFilter: (req, file, cb) => {
-    // Additional validation
     const allowedMimes = [
       "audio/mpeg",
       "audio/wav",
@@ -36,7 +35,7 @@ const upload = multer({
 });
 
 export const uploadSongs = (req, res, next) => {
-  upload.single("fileUrl")(req, res, (err) => {
+  upload.single("file")(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       if (err.code === "LIMIT_FILE_SIZE") {
         return res

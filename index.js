@@ -33,7 +33,7 @@ app.use("/api/albums", albumRoute);
 app.use("/api/songs", songRoute);
 app.use("/api/playlist", playlistRoute);
 app.use("/api/like", likeRoute);
-app.use("/api/comment", commentRoute);
+app.use("/api/comments", commentRoute);
 app.use("/api/admin", adminRoute);
 
 const port = process.env.PORT || 4000;

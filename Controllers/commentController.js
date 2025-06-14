@@ -139,3 +139,91 @@ export const deleteComment = async (req, res) => {
     });
   }
 };
+
+
+export const getAllCommentsbyArtistId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let {
+      page = 1,
+      limit = 10,
+      startDate,
+      endDate,
+      itemType = "song",
+      title = "",
+    } = req.query;
+
+    // Normalize and log itemType
+    itemType = String(itemType).trim().toLowerCase();
+    console.log("Normalized itemType:", itemType);
+
+    if (!["song", "album"].includes(itemType)) {
+      return res.status(400).json({
+        message: "Invalid itemType. Must be 'song' or 'album'",
+        received: itemType,
+      });
+    }
+
+    const skip = (page - 1) * limit;
+    const itemModel = itemType === "album" ? Album : Song;
+
+    const itemQuery = { artistId: id };
+    if (title) {
+      itemQuery.title = { $regex: title, $options: "i" };
+    }
+
+    const items = await itemModel.find(itemQuery).select("_id title");
+    if (!items.length) {
+      return res.status(404).json({ message: `No ${itemType}s found for artist` });
+    }
+
+    const itemIds = items.map((item) => item._id);
+
+    const commentQuery = {
+      itemType,
+      itemId: { $in: itemIds },
+    };
+
+    if (startDate || endDate) {
+      commentQuery.createdAt = {};
+      if (startDate) commentQuery.createdAt.$gte = new Date(startDate);
+      if (endDate) commentQuery.createdAt.$lte = new Date(endDate);
+    }
+
+    const comments = await Comment.find(commentQuery)
+      .populate("userId", "username profilePic email")
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip(parseInt(skip));
+
+    const totalCount = await Comment.countDocuments(commentQuery);
+
+    const flattenedComments = comments.map((comment) => {
+      const item = items.find(
+        (i) => i._id.toString() === comment.itemId.toString()
+      );
+      return {
+        ...comment.toObject(),
+        itemTitle: item ? item.title : "Unknown",
+      };
+    });
+
+    return res.status(200).json({
+      message: `Comments on ${itemType}s fetched successfully`,
+      totalItems: totalCount,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalCount / limit),
+      data: flattenedComments,
+    });
+  } catch (error) {
+    console.error("Error in getAllCommentsbyArtistId:", error);
+    return res.status(500).json({
+      message: "Internal Server Error while fetching artist comments",
+      error: error.message,
+    });
+  }
+};
+
+
+
+
